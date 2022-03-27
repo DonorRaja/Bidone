@@ -27,8 +27,9 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
         tableView.delegate = self
         tableView.dataSource = self
         tableView.translatesAutoresizingMaskIntoConstraints = false
-        tableView.estimatedRowHeight = 80
+        tableView.estimatedRowHeight = 120
         tableView.rowHeight = UITableView.automaticDimension
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "Cell")
         
         view.addSubview(tableView)
         NSLayoutConstraint(item: tableView,
@@ -68,30 +69,71 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
         return tableView
     }()
     
+// MARK: - Variables Declaration
+    var dateWiseOrders = [String: [Order]]()
+    var orderList = [String]()
+    
+// MARK: - ViewController Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        initView()
         initBinding()
+        
+        self.dateWiseOrders = Dictionary(grouping: self.viewModel.orders.value, by: { $0.orderDate })
     }
     
-    func initView() {
-        //TODO:-  view.backgroundColor = Custom color of your choice
-    }
+    // MARK: - Functions
     
     func initBinding() {
-        viewModel.orders.addObserver(fireNow: false) { [weak self] (orders) in
+        viewModel.orders.addObserver(fireNow: true) { [weak self] (orders) in
             self?.tableView.reloadData()
         }
     }
     
+    func getLists() {
+        orderList = Array(self.dateWiseOrders.keys)
+        orderList = orderList.sorted {$0.compare($1, options: .numeric) == .orderedAscending}
+    
+    }
+    
+    func getNumberOfEntrysInSection (Section: Int) -> Int {
+
+        let order:String = self.orderList[Section]
+
+        let value:[Order] = self.dateWiseOrders[order]!
+
+        return value.count
+    }
+    
+    func requestForOrderList(indexPath: IndexPath) -> [Order] {
+        let sectionList = self.orderList[indexPath.section]
+         let rowsList = self.dateWiseOrders[sectionList]
+        
+        return rowsList!
+    }
+    
     // MARK: - UITableViewDataSource, UITableViewDelegate
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return viewModel.orders.value.count
+        return getNumberOfEntrysInSection(Section: section)
+    }
+    
+    func numberOfSections(in tableView: UITableView) -> Int {
+        self.getLists()
+        return self.orderList.count
+    }
+    
+    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+
+        return orderList[section]
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
+        
+        let rowsList = self.requestForOrderList(indexPath: indexPath)
+        
+        cell.textLabel?.text = rowsList[indexPath.row].description
+        
         return cell
     }
     
