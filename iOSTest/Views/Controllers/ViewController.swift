@@ -8,6 +8,8 @@
 import UIKit
 
 class ViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
+    
+    // MARK: - Variables
     let viewModel: ViewModel = ViewModel()
     
     lazy var loadingIndicator: UIActivityIndicatorView = {
@@ -79,7 +81,7 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
         
         initBinding()
         
-        self.dateWiseOrders = Dictionary(grouping: self.viewModel.orders.value, by: { $0.orderDate })
+        self.dateWiseOrders = Utility.groupingDictionary(dict: self.viewModel.orders.value)
     }
     
     // MARK: - Functions
@@ -92,7 +94,7 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
     
     func getLists() {
         orderList = Array(self.dateWiseOrders.keys)
-        orderList = orderList.sorted {$0.compare($1, options: .numeric) == .orderedAscending}
+        orderList = orderList.sorted {$0.compare($1, options: .numeric) == .orderedDescending}
     
     }
     
@@ -128,7 +130,7 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
+        let cell = tableView.dequeueReusableCell(withIdentifier: Bidone.cell, for: indexPath)
         
         let rowsList = self.requestForOrderList(indexPath: indexPath)
         
@@ -139,6 +141,12 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: false)
+        let vc = UIStoryboard.init(name: Bidone.main, bundle: Bundle.main).instantiateViewController(withIdentifier: Bidone.detailVC) as? DetailsViewController
+        let rowsList = self.requestForOrderList(indexPath: indexPath)
+        let orderDetail = rowsList[indexPath.row]
+
+        vc?.orderDetails = orderDetail
+        self.navigationController?.pushViewController(vc!, animated: true)
     }
 }
 
